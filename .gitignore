@@ -1,4 +1,8 @@
+
 /vendor/
+/.idea/
+/.vscode/
 .env
-.idea/
-.vscode/
+.env.local
+*.log
+.DS_Store
