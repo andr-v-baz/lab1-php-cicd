@@ -1,0 +1,198 @@
+
+@startuml
+title Діаграма класів — Електронний словник (перекладач)
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+left to right direction
+
+package "Models" {
+
+class User {
+  - id: int
+  - name: string
+  - email: string
+  - passwordHash: string
+  - createdAt: DateTime
+  + register(): bool
+  + login(password: string): bool
+  + logout(): void
+  + updateProfile(name: string): bool
+  + getFavorites(): List<Favorite>
+}
+
+class Admin {
+  - adminId: int
+  - permissions: List<string>
+  - lastLoginAt: DateTime
+  - isActive: bool
+  - auditLevel: int
+  + addWord(word: Word): bool
+  + editWord(word: Word): bool
+  + deleteWord(wordId: int): bool
+  + blockUser(userId: int): bool
+  + viewAuditLog(): List<string>
+}
+
+class Word {
+  - id: int
+  - text: string
+  - languageCode: string
+  - partOfSpeech: string
+  - createdAt: DateTime
+  + validate(): bool
+  + updateText(text: string): void
+  + addTranslation(translation: Translation): void
+  + getTranslations(): List<Translation>
+  + getExamples(): List<Example>
+}
+
+class Translation {
+  - id: int
+  - wordId: int
+  - translatedText: string
+  - targetLanguage: string
+  - createdAt: DateTime
+  + validate(): bool
+  + updateText(text: string): void
+  + getTargetLanguage(): string
+  + getSourceWord(): Word
+  + formatTranslation(): string
+}
+
+class Language {
+  - id: int
+  - code: string
+  - name: string
+  - nativeName: string
+  - isActive: bool
+  + activate(): void
+  + deactivate(): void
+  + updateName(name: string): void
+  + getCode(): string
+  + getWords(): List<Word>
+}
+
+class Example {
+  - id: int
+  - wordId: int
+  - sentence: string
+  - translation: string
+  - source: string
+  + validate(): bool
+  + updateSentence(text: string): void
+  + updateTranslation(text: string): void
+  + getWord(): Word
+  + formatExample(): string
+}
+
+class Favorite {
+  - id: int
+  - userId: int
+  - wordId: int
+  - addedAt: DateTime
+  - note: string
+  + save(): bool
+  + remove(): bool
+  + updateNote(note: string): void
+  + getWord(): Word
+  + getUser(): User
+}
+
+class SearchHistory {
+  - id: int
+  - userId: int
+  - query: string
+  - searchedAt: DateTime
+  - resultsCount: int
+  + record(): bool
+  + clear(): void
+  + getQuery(): string
+  + getResultsCount(): int
+  + getUser(): User
+}
+
+}
+
+package "Controllers" {
+
+class DictionaryController {
+  - wordModel: Word
+  - translationModel: Translation
+  - languageModel: Language
+  - defaultPageSize: int
+  - maxQueryLength: int
+  + index(): List<Word>
+  + search(query: string): List<Word>
+  + show(wordId: int): Word
+  + translate(wordId: int, lang: string): List<Translation>
+  + examples(wordId: int): List<Example>
+}
+
+class FavoriteController {
+  - favoriteModel: Favorite
+  - userModel: User
+  - wordModel: Word
+  - maxFavorites: int
+  - paginationSize: int
+  + index(userId: int): List<Favorite>
+  + store(userId: int, wordId: int): bool
+  + destroy(favoriteId: int): bool
+  + updateNote(favoriteId: int, note: string): bool
+  + exists(userId: int, wordId: int): bool
+}
+
+class AdminController {
+  - adminModel: Admin
+  - userModel: User
+  - wordModel: Word
+  - translationModel: Translation
+  - pageSize: int
+  + createWord(text: string): Word
+  + updateWord(wordId: int, text: string): bool
+  + deleteWord(wordId: int): bool
+  + updateTranslation(id: int, text: string): bool
+  + blockUser(userId: int): bool
+}
+
+class AuthController {
+  - userModel: User
+  - minPasswordLength: int
+  - maxLoginAttempts: int
+  - sessionLifetime: int
+  - redirectPath: string
+  + register(name: string, email: string, password: string): User
+  + login(email: string, password: string): bool
+  + logout(): void
+  + profile(userId: int): User
+  + updateProfile(userId: int, name: string): bool
+}
+
+}
+
+' Успадкування
+Admin --|> User
+
+' Композиція
+Word "1" *-- "0..*" Translation : translations
+Word "1" *-- "0..*" Example : examples
+
+' Агрегація
+User "1" o-- "0..*" Favorite : favorites
+User "1" o-- "0..*" SearchHistory : history
+
+' Асоціації
+Word "0..*" --> "1" Language : sourceLanguage
+Favorite "0..*" --> "1" Word : savedWord
+SearchHistory "0..*" --> "0..1" Word : foundWord
+
+' Контролери використовують моделі
+DictionaryController ..> Word
+DictionaryController ..> Translation
+DictionaryController ..> Language
+FavoriteController ..> Favorite
+FavoriteController ..> User
+AdminController ..> Admin
+AdminController ..> Word
+AuthController ..> User
+
+@enduml

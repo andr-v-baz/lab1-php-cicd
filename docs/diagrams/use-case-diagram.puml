@@ -1,0 +1,62 @@
+
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+title Діаграма варіантів використання\nЕлектронний словник (перекладач)
+
+actor "Гість" as Guest
+actor "Зареєстрований\nкористувач" as User
+actor "Адміністратор" as Admin
+
+' Узагальнення акторів
+User --|> Guest
+Admin --|> User
+
+rectangle "Електронний словник" {
+
+  ' Функції гостя
+  usecase "Пошук слова" as UC1
+  usecase "Перегляд перекладу" as UC2
+  usecase "Вибір мови перекладу" as UC3
+
+  ' Функції користувача
+  usecase "Збереження слова" as UC4
+  usecase "Перегляд збережених слів" as UC5
+  usecase "Видалення слова\nз обраного" as UC6
+
+  ' Функції адміністратора
+  usecase "Додавання нового слова" as UC7
+  usecase "Редагування перекладу" as UC8
+  usecase "Керування користувачами" as UC9
+
+  ' Допоміжні функції
+  usecase "Перевірка введених даних" as UC10
+  usecase "Перевірка авторизації" as UC11
+  usecase "Перегляд прикладів\nвикористання" as UC12
+}
+
+' Асоціації гостя
+Guest --> UC1
+Guest --> UC2
+Guest --> UC3
+
+' Асоціації користувача
+User --> UC4
+User --> UC5
+User --> UC6
+
+' Асоціації адміністратора
+Admin --> UC7
+Admin --> UC8
+Admin --> UC9
+
+' Відношення include
+UC1 ..> UC10 : <<include>>
+UC4 ..> UC11 : <<include>>
+
+' Відношення extend
+UC12 ..> UC2 : <<extend>>
+
+@enduml
