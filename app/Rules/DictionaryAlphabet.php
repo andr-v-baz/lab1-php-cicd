@@ -9,8 +9,7 @@ class DictionaryAlphabet implements ValidationRule
 {
     public function __construct(
         private string $language
-    ) {
-    }
+    ) {}
 
     public function validate(
         string $attribute,
@@ -28,6 +27,7 @@ class DictionaryAlphabet implements ValidationRule
 
         if (! isset($patterns[$this->language])) {
             $fail('Непідтримувана мова.');
+
             return;
         }
 

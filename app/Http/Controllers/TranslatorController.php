@@ -25,16 +25,16 @@ class TranslatorController extends Controller
             $words = Word::with(['translations.language'])
                 ->where(function ($query) use ($search, $direction) {
                     if ($direction === 'uk-en') {
-                        $query->where('translation', 'like', '%' . $search . '%')
+                        $query->where('translation', 'like', '%'.$search.'%')
                             ->orWhereHas('translations', function ($translationQuery) use ($search) {
                                 $translationQuery
-                                    ->where('translated_text', 'like', '%' . $search . '%')
+                                    ->where('translated_text', 'like', '%'.$search.'%')
                                     ->whereHas('language', function ($languageQuery) {
                                         $languageQuery->where('code', 'uk');
                                     });
                             });
                     } else {
-                        $query->where('original', 'like', '%' . $search . '%');
+                        $query->where('original', 'like', '%'.$search.'%');
                     }
                 })
                 ->orderBy('original')

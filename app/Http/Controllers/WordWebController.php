@@ -27,17 +27,17 @@ class WordWebController extends Controller
             ->when($search !== '', function ($query) use ($search, $direction) {
                 if ($direction === 'uk-en') {
                     $query->where(function ($query) use ($search) {
-                        $query->where('translation', 'like', '%' . $search . '%')
+                        $query->where('translation', 'like', '%'.$search.'%')
                             ->orWhereHas('translations', function ($translationQuery) use ($search) {
                                 $translationQuery
-                                    ->where('translated_text', 'like', '%' . $search . '%')
+                                    ->where('translated_text', 'like', '%'.$search.'%')
                                     ->whereHas('language', function ($languageQuery) {
                                         $languageQuery->where('code', 'uk');
                                     });
                             });
                     });
                 } else {
-                    $query->where('original', 'like', '%' . $search . '%');
+                    $query->where('original', 'like', '%'.$search.'%');
                 }
             })
             ->orderBy('id', 'desc')
@@ -144,7 +144,7 @@ class WordWebController extends Controller
             $rules['translations'] = ['required', 'array'];
 
             foreach ($existingTranslations as $translation) {
-                $rules['translations.' . $translation->id] = [
+                $rules['translations.'.$translation->id] = [
                     'required',
                     'string',
                     'min:2',
