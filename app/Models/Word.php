@@ -2,16 +2,33 @@
 
 namespace App\Models;
 
-class Word
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Word extends Model
 {
-    public function __construct(
-        public string $original,
-        public string $translation,
-        public string $language
-    ) {}
+    use HasFactory;
+
+    protected $fillable = [
+        'original',
+        'translation',
+        'language_id',
+    ];
+
+    public function language(): BelongsTo
+    {
+        return $this->belongsTo(Language::class);
+    }
+
+    public function translations(): HasMany
+    {
+        return $this->hasMany(Translation::class);
+    }
 
     public function getInfo(): string
     {
-        return "{$this->original} → {$this->translation} ({$this->language})";
+        return "{$this->original} → {$this->translation} ({$this->language?->name})";
     }
 }
