@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\DictionaryWordController;
 use App\Http\Controllers\DictionaryInfoController;
+use App\Http\Controllers\DictionaryWordController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
