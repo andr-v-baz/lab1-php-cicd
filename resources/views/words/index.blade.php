@@ -12,9 +12,16 @@
             </p>
         </div>
 
-        <a href="{{ route('words.create') }}" class="btn btn-success">
-            + Додати слово
-        </a>
+        @auth
+            @can('create', \App\Models\Word::class)
+                <a
+                    href="{{ route('words.create') }}"
+                    class="btn btn-success"
+                >
+                    + Додати слово
+                </a>
+            @endcan
+        @endauth
     </div>
 
     @if ($words->isEmpty())
@@ -29,8 +36,11 @@
                         <tr>
                             <th class="ps-4">Англійське слово</th>
                             <th>Українські переклади</th>
-                            <th class="text-center">Обране</th>
-                            <th class="text-end pe-4">Дії</th>
+
+                            @auth
+                                <th class="text-center">Обране</th>
+                                <th class="text-end pe-4">Дії</th>
+                            @endauth
                         </tr>
                     </thead>
 
@@ -44,13 +54,19 @@
                                 <td>
                                     @php
                                         $translations = $word->translations
-                                            ->filter(fn ($translation) => $translation->language?->code === 'uk')
+                                            ->filter(
+                                                fn ($translation) =>
+                                                    $translation->language?->code === 'uk'
+                                            )
                                             ->pluck('translated_text')
                                             ->filter()
                                             ->unique()
                                             ->values();
 
-                                        if ($word->translation && !$translations->contains($word->translation)) {
+                                        if (
+                                            $word->translation &&
+                                            !$translations->contains($word->translation)
+                                        ) {
                                             $translations->prepend($word->translation);
                                         }
                                     @endphp
@@ -58,104 +74,145 @@
                                     {{ $translations->implode(', ') ?: 'Перекладів немає' }}
                                 </td>
 
-                                <td class="text-center">
-                                    @if (in_array($word->id, $favoriteWordIds ?? []))
-                                        <form
-                                            action="{{ route('favorites.destroy', $word->id) }}"
-                                            method="POST"
-                                        >
-                                            @csrf
-                                            @method('DELETE')
+                                @auth
+                                    <td class="text-center">
+                                        @php
+                                            $isFavorite = in_array(
+                                                $word->id,
+                                                $favoriteWordIds ?? []
+                                            );
+                                        @endphp
 
+                                        @if ($isFavorite)
+                                            <form
+                                                action="{{ route('favorites.destroy', $word->id) }}"
+                                                method="POST"
+                                            >
+                                                @csrf
+                                                @method('DELETE')
+
+                                                <button
+                                                    type="submit"
+                                                    class="btn btn-link fs-3 p-0 text-decoration-none"
+                                                    style="color: #ffc107;"
+                                                    title="Прибрати з обраного"
+                                                    aria-label="Прибрати з обраного"
+                                                >
+                                                    ★
+                                                </button>
+                                            </form>
+                                        @else
+                                            <form
+                                                action="{{ route('favorites.store') }}"
+                                                method="POST"
+                                            >
+                                                @csrf
+
+                                                <input
+                                                    type="hidden"
+                                                    name="word_id"
+                                                    value="{{ $word->id }}"
+                                                >
+
+                                                <button
+                                                    type="submit"
+                                                    class="btn btn-link fs-3 p-0 text-decoration-none"
+                                                    style="color: #6c757d;"
+                                                    title="Додати в обране"
+                                                    aria-label="Додати в обране"
+                                                >
+                                                    ☆
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </td>
+
+                                    <td class="text-end pe-4">
+                                        <div class="dropdown">
                                             <button
-                                                type="submit"
-                                                class="btn btn-link text-warning fs-4 p-0 text-decoration-none"
-                                                title="Прибрати з обраного"
-                                                aria-label="Прибрати з обраного"
+                                                class="btn btn-light border btn-sm"
+                                                type="button"
+                                                data-bs-toggle="dropdown"
+                                                aria-expanded="false"
+                                                aria-label="Меню дій"
                                             >
-                                                ★
+                                                &#8942;
                                             </button>
-                                        </form>
-                                    @else
-                                        <form
-                                            action="{{ route('favorites.store') }}"
-                                            method="POST"
-                                        >
-                                            @csrf
 
-                                            <input
-                                                type="hidden"
-                                                name="word_id"
-                                                value="{{ $word->id }}"
-                                            >
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li>
+                                                    <span class="dropdown-item-text text-muted small">
+                                                        👤 Власник:
+                                                        @if ($word->user_id === auth()->id())
+                                                            Ви
+                                                        @elseif ($word->user)
+                                                            {{ $word->user->name }}
+                                                        @else
+                                                            Системне слово
+                                                        @endif
+                                                    </span>
+                                                </li>
 
-                                            <button
-                                                type="submit"
-                                                class="btn btn-link text-secondary fs-4 p-0 text-decoration-none"
-                                                title="Додати в обране"
-                                                aria-label="Додати в обране"
-                                            >
-                                                ☆
-                                            </button>
-                                        </form>
-                                    @endif
-                                </td>
+                                                <li>
+                                                    <hr class="dropdown-divider">
+                                                </li>
 
-                                <td class="text-end pe-4">
-                                    <div class="dropdown">
-                                        <button
-                                            class="btn btn-light border btn-sm"
-                                            type="button"
-                                            data-bs-toggle="dropdown"
-                                            aria-expanded="false"
-                                            aria-label="Меню слова"
-                                        >
-                                            &#8942;
-                                        </button>
-
-                                        <ul class="dropdown-menu dropdown-menu-end">
-                                            <li>
-                                                <a
-                                                    class="dropdown-item text-success"
-                                                    href="{{ route('translations.create', ['word_id' => $word->id]) }}"
-                                                >
-                                                    + Додати переклад
-                                                </a>
-                                            </li>
-
-                                            <li>
-                                                <a
-                                                    class="dropdown-item"
-                                                    href="{{ route('words.edit', $word->id) }}"
-                                                >
-                                                    Редагувати слово
-                                                </a>
-                                            </li>
-
-                                            <li>
-                                                <hr class="dropdown-divider">
-                                            </li>
-
-                                            <li>
-                                                <form
-                                                    action="{{ route('words.destroy', $word->id) }}"
-                                                    method="POST"
-                                                    onsubmit="return confirm('Точно видалити це слово та всі його переклади?')"
-                                                >
-                                                    @csrf
-                                                    @method('DELETE')
-
-                                                    <button
-                                                        type="submit"
-                                                        class="dropdown-item text-danger"
+                                                <li>
+                                                    <a
+                                                        class="dropdown-item"
+                                                        href="{{ route('words.show', $word->id) }}"
                                                     >
-                                                        Видалити слово
-                                                    </button>
-                                                </form>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </td>
+                                                        👁 Переглянути слово
+                                                    </a>
+                                                </li>
+
+                                                @can('update', $word)
+                                                    <li>
+                                                        <a
+                                                            class="dropdown-item text-success"
+                                                            href="{{ route('translations.create', ['word_id' => $word->id]) }}"
+                                                        >
+                                                            + Додати переклад
+                                                        </a>
+                                                    </li>
+
+                                                    <li>
+                                                        <a
+                                                            class="dropdown-item"
+                                                            href="{{ route('words.edit', $word->id) }}"
+                                                        >
+                                                            ✏️ Редагувати слово
+                                                        </a>
+                                                    </li>
+                                                @endcan
+
+                                                @can('delete', $word)
+                                                    <li>
+                                                        <hr class="dropdown-divider">
+                                                    </li>
+
+                                                    <li>
+                                                        <form
+                                                            action="{{ route('words.destroy', $word->id) }}"
+                                                            method="POST"
+                                                            onsubmit="return confirm('Точно видалити це слово та всі його переклади?')"
+                                                        >
+                                                            @csrf
+                                                            @method('DELETE')
+
+                                                            <button
+                                                                type="submit"
+                                                                class="dropdown-item text-danger"
+                                                            >
+                                                                🗑 Видалити слово
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                @endcan
+                                            </ul>
+                                        </div>
+                                    </td>
+                                @endauth
                             </tr>
                         @endforeach
                     </tbody>

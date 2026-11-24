@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Language;
+use App\Models\User;
 use App\Models\Word;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -26,6 +27,15 @@ class DictionaryWordTest extends TestCase
         );
     }
 
+    private function loginAsUser(): User
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user);
+
+        return $user;
+    }
+
     public function test_health_returns_200(): void
     {
         $this->getJson('/health')
@@ -42,6 +52,8 @@ class DictionaryWordTest extends TestCase
 
     public function test_word_show_returns_200(): void
     {
+        $this->loginAsUser();
+
         $this->post(route('words.store'), [
             'original' => 'hello',
             'translation' => 'привіт',
@@ -63,6 +75,8 @@ class DictionaryWordTest extends TestCase
 
     public function test_store_without_original_returns_validation_error(): void
     {
+        $this->loginAsUser();
+
         $this->from(route('words.create'))
             ->post(route('words.store'), [
                 'original' => '',
@@ -74,19 +88,36 @@ class DictionaryWordTest extends TestCase
 
     public function test_store_with_valid_data_redirects_to_words_index(): void
     {
+        $user = $this->loginAsUser();
+
         $this->post(route('words.store'), [
             'original' => 'cat',
             'translation' => 'кіт',
-        ])
-            ->assertRedirect(route('words.index'));
+        ])->assertRedirect(route('words.index'));
 
         $this->assertDatabaseHas('words', [
             'original' => 'cat',
             'translation' => 'кіт',
+            'user_id' => $user->id,
         ]);
 
         $this->assertDatabaseHas('translations', [
             'translated_text' => 'кіт',
+        ]);
+    }
+
+    public function test_guest_cannot_create_word(): void
+    {
+        $this->get(route('words.create'))
+            ->assertRedirect(route('login'));
+
+        $this->post(route('words.store'), [
+            'original' => 'dog',
+            'translation' => 'собака',
+        ])->assertRedirect(route('login'));
+
+        $this->assertDatabaseMissing('words', [
+            'original' => 'dog',
         ]);
     }
 }
