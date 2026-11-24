@@ -33,7 +33,7 @@
             </button>
 
             <div class="collapse navbar-collapse" id="navbarMenu">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto align-items-lg-center">
 
                     <li class="nav-item">
                         <a
@@ -71,23 +71,68 @@
                         </a>
                     </li>
 
-                    <li class="nav-item">
-                        <a
-                            class="nav-link {{ request()->routeIs('favorites.*') ? 'active' : '' }}"
-                            href="{{ route('favorites.index') }}"
-                        >
-                            ⭐ Обране
-                        </a>
-                    </li>
+                    @guest
+                        <li class="nav-item ms-lg-3">
+                            <a
+                                class="nav-link {{ request()->routeIs('login') ? 'active' : '' }}"
+                                href="{{ route('login') }}"
+                            >
+                                Увійти
+                            </a>
+                        </li>
 
-                    <li class="nav-item">
-                        <a
-                            class="nav-link {{ request()->routeIs('search-history.*') ? 'active' : '' }}"
-                            href="{{ route('search-history.index') }}"
-                        >
-                            🕘 Історія
-                        </a>
-                    </li>
+                        <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                            <a
+                                class="btn btn-success btn-sm"
+                                href="{{ route('register') }}"
+                            >
+                                Зареєструватися
+                            </a>
+                        </li>
+                    @endguest
+
+                    @auth
+                        <li class="nav-item">
+                            <a
+                                class="nav-link {{ request()->routeIs('favorites.*') ? 'active' : '' }}"
+                                href="{{ route('favorites.index') }}"
+                            >
+                                ⭐ Обране
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a
+                                class="nav-link {{ request()->routeIs('search-history.*') ? 'active' : '' }}"
+                                href="{{ route('search-history.index') }}"
+                            >
+                                🕘 Історія
+                            </a>
+                        </li>
+
+                        <li class="nav-item ms-lg-3">
+                            <span class="navbar-text text-white">
+                                👤 {{ auth()->user()->name }}
+                            </span>
+                        </li>
+
+                        <li class="nav-item ms-lg-3 mt-2 mt-lg-0">
+                            <form
+                                action="{{ route('logout') }}"
+                                method="POST"
+                                class="m-0"
+                            >
+                                @csrf
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-outline-light btn-sm"
+                                >
+                                    Вийти
+                                </button>
+                            </form>
+                        </li>
+                    @endauth
 
                 </ul>
             </div>

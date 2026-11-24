@@ -15,11 +15,17 @@ class Word extends Model
         'original',
         'translation',
         'language_id',
+        'user_id',
     ];
 
     public function language(): BelongsTo
     {
         return $this->belongsTo(Language::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function translations(): HasMany

@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Favorite;
 use App\Models\Language;
-use App\Models\User;
 use App\Models\Word;
 use App\Rules\DictionaryAlphabet;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +15,8 @@ use Illuminate\View\View;
 
 class WordWebController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index(Request $request): View
     {
         $search = trim((string) $request->query('search', ''));
@@ -44,10 +46,8 @@ class WordWebController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        $testUser = User::where('email', 'dictionary-test@example.com')->first();
-
-        $favoriteWordIds = $testUser
-            ? Favorite::where('user_id', $testUser->id)
+        $favoriteWordIds = $request->user()
+            ? Favorite::where('user_id', $request->user()->id)
                 ->pluck('word_id')
                 ->all()
             : [];
@@ -70,11 +70,15 @@ class WordWebController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create', Word::class);
+
         return view('words.create');
     }
 
     public function store(Request $request): RedirectResponse
     {
+        $this->authorize('create', Word::class);
+
         $validated = $request->validate([
             'original' => [
                 'required',
@@ -95,11 +99,12 @@ class WordWebController extends Controller
         $english = Language::where('code', 'en')->firstOrFail();
         $ukrainian = Language::where('code', 'uk')->firstOrFail();
 
-        DB::transaction(function () use ($validated, $english, $ukrainian) {
+        DB::transaction(function () use ($validated, $english, $ukrainian, $request) {
             $word = Word::create([
                 'original' => trim($validated['original']),
                 'translation' => trim($validated['translation']),
                 'language_id' => $english->id,
+                'user_id' => $request->user()->id,
             ]);
 
             $word->translations()->create([
@@ -117,12 +122,16 @@ class WordWebController extends Controller
     {
         $word = Word::with(['translations.language'])->findOrFail($id);
 
+        $this->authorize('update', $word);
+
         return view('words.edit', compact('word'));
     }
 
     public function update(Request $request, int $id): RedirectResponse
     {
         $word = Word::with(['translations.language'])->findOrFail($id);
+
+        $this->authorize('update', $word);
 
         $ukrainian = Language::where('code', 'uk')->firstOrFail();
         $english = Language::where('code', 'en')->firstOrFail();
@@ -241,6 +250,8 @@ class WordWebController extends Controller
     public function destroy(int $id): RedirectResponse
     {
         $word = Word::findOrFail($id);
+
+        $this->authorize('delete', $word);
 
         DB::transaction(function () use ($word) {
             $word->translations()->delete();

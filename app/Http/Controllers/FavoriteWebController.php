@@ -3,31 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Favorite;
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class FavoriteWebController extends Controller
 {
-    private function testUserId(): int
-    {
-        $user = User::firstOrCreate(
-            ['email' => 'dictionary-test@example.com'],
-            [
-                'name' => 'Dictionary Test',
-                'password' => Hash::make('TestPassword123!'),
-            ]
-        );
-
-        return $user->id;
-    }
-
-    public function index(): View
+    public function index(Request $request): View
     {
         $favorites = Favorite::with('word')
-            ->where('user_id', $this->testUserId())
+            ->where('user_id', $request->user()->id)
             ->orderByDesc('id')
             ->get();
 
@@ -41,18 +26,16 @@ class FavoriteWebController extends Controller
         ]);
 
         Favorite::firstOrCreate([
-            'user_id' => $this->testUserId(),
+            'user_id' => $request->user()->id,
             'word_id' => $validated['word_id'],
         ]);
 
-        return redirect()
-            ->route('words.index')
-            ->with('success', 'Слово додано в обране!');
+        return back()->with('success', 'Слово додано в обране!');
     }
 
-    public function destroy(int $id): RedirectResponse
+    public function destroy(Request $request, int $id): RedirectResponse
     {
-        Favorite::where('user_id', $this->testUserId())
+        Favorite::where('user_id', $request->user()->id)
             ->where('word_id', $id)
             ->delete();
 
