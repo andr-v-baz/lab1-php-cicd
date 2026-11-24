@@ -20,6 +20,4 @@ use OpenApi\Attributes as OA;
     bearerFormat: 'Token',
     description: 'Введіть токен, отриманий після входу через /login.'
 )]
-class Documentation
-{
-}
+class Documentation {}

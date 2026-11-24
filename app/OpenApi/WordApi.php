@@ -128,6 +128,4 @@ use OpenApi\Attributes as OA;
         new OA\Response(response: 404, description: 'Слово не знайдено'),
     ]
 )]
-class WordApi
-{
-}
+class WordApi {}
