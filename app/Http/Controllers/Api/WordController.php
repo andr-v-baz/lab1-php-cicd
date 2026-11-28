@@ -3,19 +3,23 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Word\StoreWordRequest;
+use App\Http\Requests\Word\UpdateWordRequest;
 use App\Http\Resources\WordResource;
 use App\Models\Word;
+use App\Services\WordService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Validation\Rule;
 
 class WordController extends Controller
 {
     use AuthorizesRequests;
 
-    // Отримати список усіх слів
+    public function __construct(
+        private readonly WordService $wordService
+    ) {}
+
     public function index(): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Word::class);
@@ -31,7 +35,6 @@ class WordController extends Controller
         return WordResource::collection($words);
     }
 
-    // Переглянути конкретне слово
     public function show(Word $word): WordResource
     {
         $this->authorize('view', $word);
@@ -45,33 +48,14 @@ class WordController extends Controller
         return new WordResource($word);
     }
 
-    // Додати нове слово
-    public function store(Request $request): JsonResponse
+    public function store(StoreWordRequest $request): JsonResponse
     {
         $this->authorize('create', Word::class);
 
-        $validated = $request->validate([
-            'original' => ['required', 'string', 'max:255'],
-            'translation' => ['required', 'string', 'max:255'],
-            'language_id' => [
-                'required',
-                'integer',
-                Rule::exists('languages', 'id'),
-            ],
-        ]);
-
-        $word = Word::create([
-            'original' => $validated['original'],
-            'translation' => $validated['translation'],
-            'language_id' => $validated['language_id'],
-            'user_id' => $request->user()->id,
-        ]);
-
-        $word->load([
-            'language',
-            'translations.language',
-            'user',
-        ]);
+        $word = $this->wordService->create(
+            $request->validated(),
+            $request->user()->id
+        );
 
         return response()->json([
             'message' => 'Слово успішно додано.',
@@ -79,29 +63,16 @@ class WordController extends Controller
         ], 201);
     }
 
-    // Оновити слово
-    public function update(Request $request, Word $word): JsonResponse
-    {
+    public function update(
+        UpdateWordRequest $request,
+        Word $word
+    ): JsonResponse {
         $this->authorize('update', $word);
 
-        $validated = $request->validate([
-            'original' => ['sometimes', 'required', 'string', 'max:255'],
-            'translation' => ['sometimes', 'required', 'string', 'max:255'],
-            'language_id' => [
-                'sometimes',
-                'required',
-                'integer',
-                Rule::exists('languages', 'id'),
-            ],
-        ]);
-
-        $word->update($validated);
-
-        $word->load([
-            'language',
-            'translations.language',
-            'user',
-        ]);
+        $word = $this->wordService->update(
+            $word,
+            $request->validated()
+        );
 
         return response()->json([
             'message' => 'Слово успішно оновлено.',
@@ -109,12 +80,11 @@ class WordController extends Controller
         ]);
     }
 
-    // Видалити слово
     public function destroy(Word $word): JsonResponse
     {
         $this->authorize('delete', $word);
 
-        $word->delete();
+        $this->wordService->delete($word);
 
         return response()->json([
             'message' => 'Слово успішно видалено.',

@@ -11,6 +11,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      SENTRY_LARAVEL_DSN: ""
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,11 +39,8 @@ jobs:
       - name: Check code style with Pint
         run: ./vendor/bin/pint --test
 
-      - name: Run Laravel feature tests
-        run: php artisan test --filter=DictionaryWordTest
-
-      - name: Run unit tests
-        run: ./vendor/bin/phpunit tests/Unit
+      - name: Run all Laravel tests
+        run: php artisan test
 
       - name: Check GitHub Secret
         env:
