@@ -15,10 +15,15 @@ class WordApiTest extends TestCase
 
     private function createLanguage(): Language
     {
-        return Language::create([
-            'name' => 'English',
-            'code' => 'en',
-        ]);
+        Language::firstOrCreate(
+            ['code' => 'uk'],
+            ['name' => 'Ukrainian']
+        );
+
+        return Language::firstOrCreate(
+            ['code' => 'en'],
+            ['name' => 'English']
+        );
     }
 
     private function createWord(
